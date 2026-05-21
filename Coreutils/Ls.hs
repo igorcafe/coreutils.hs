@@ -8,21 +8,21 @@ import Data.List (isPrefixOf, sort)
 import System.Directory (listDirectory)
 import System.Exit (exitFailure)
 import System.IO (stderr)
-import System.Posix (FileStatus, directoryMode, fileGroup, fileMode, fileOwner, getFileStatus, getGroupEntryForID, getUserEntryForID, groupExecuteMode, groupName, groupReadMode, groupWriteMode, otherExecuteMode, otherReadMode, otherWriteMode, ownerExecuteMode, ownerReadMode, ownerWriteMode, userName)
+import System.Posix (directoryMode, fileGroup, fileMode, fileOwner, getFileStatus, getGroupEntryForID, getUserEntryForID, groupExecuteMode, groupName, groupReadMode, groupWriteMode, otherExecuteMode, otherReadMode, otherWriteMode, ownerExecuteMode, ownerReadMode, ownerWriteMode, userName)
 import Text.Printf (hPrintf, printf)
 
 runLs :: [String] -> IO ()
 runLs rawArgs = do
   let (eitherFlags, args) = parseArgs rawArgs
-  let (errors, flags) = partitionEithers eitherFlags
-  unless (null errors) $ do
-    mapM_ (\e -> hPrintf stderr "ls: %s\n" e) errors
+  let (flagErrors, flags) = partitionEithers eitherFlags
+  unless (null flagErrors) $ do
+    mapM_ (\e -> hPrintf stderr "ls: %s\n" e) flagErrors
     exitFailure
 
-  files <- listDirectory "."
-  let filtered = filterFiles flags args (files ++ [".", ".."])
+  filePaths <- listDirectory "."
+  let filtered = filterFiles flags args (filePaths ++ [".", ".."])
 
-  let (errors, files) = partitionEithers filtered
+  let (lsErrors, files) = partitionEithers filtered
 
   forM_ files $ \file -> do
     if shouldFormatLong flags
@@ -34,8 +34,8 @@ runLs rawArgs = do
       else do
         putStrLn file
 
-  unless (null errors) $ do
-    mapM_ (\e -> hPrintf stderr "ls: %s\n" e) errors
+  unless (null lsErrors) $ do
+    mapM_ (\e -> hPrintf stderr "ls: %s\n" e) lsErrors
     exitFailure
 
 validFlags = ["-a", "-l"]
@@ -71,8 +71,7 @@ shouldFormatLong flags = "-l" `elem` flags
 
 formatLong status owner group file = formatted
   where
-    mode = fileMode status
-    modeStr flag on = if (mode .&. flag) /= 0 then on else "-"
+    modes = fileMode status
 
     flags =
       [ (directoryMode, "d"),
@@ -86,5 +85,5 @@ formatLong status owner group file = formatted
         (otherWriteMode, "w"),
         (otherExecuteMode, "x")
       ]
-    formatFlags flags = concatMap (\t -> (modeStr (fst t) (snd t))) flags
-    formatted = printf "%s %s %s %s" (formatFlags flags) (userName owner) (groupName group) file
+    perms = concatMap (\(mode, c) -> (if (modes .&. mode) /= 0 then c else "-")) flags
+    formatted = printf "%s %s %s %s" perms (userName owner) (groupName group) file
