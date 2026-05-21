@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-# helper script for calling coreutils utilities with ./exec ls -a
-name=$1
-shift
-echo "EXECUTING: $name $@" >&2
-exec -a $name ./coreutils $@
