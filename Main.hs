@@ -14,4 +14,4 @@ main = do
 
 runProgram :: String -> [String] -> IO ()
 runProgram "ls" = runLs
-runProgram "coreutils" = runCoreutils
+runProgram _ = runCoreutils

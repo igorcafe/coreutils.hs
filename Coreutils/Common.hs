@@ -1,4 +1,4 @@
-module Coreutils.Common (splitFlagsAndArgs) where
+module Coreutils.Common (splitFlagsAndArgs, headMaybe) where
 
 import Data.List (isPrefixOf, nub, partition)
 
@@ -17,3 +17,7 @@ splitFlagsAndArgs rawArgs = (flags, args)
 
     -- detect if its a short flag like -l, -a, or even combined short flags like -la
     isShortFlag rawArg = rawArg /= "-" && not ("--" `isPrefixOf` rawArg) && "-" `isPrefixOf` rawArg
+
+headMaybe :: [a] -> Maybe a
+headMaybe [] = Nothing
+headMaybe (x : _) = Just x
